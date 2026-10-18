@@ -18,11 +18,10 @@ def createTokenForUser(userID):
     Returns:
         str: JWT token字符串，如果用户不存在则返回None
     """
-    userMatch = indexUserWithID(userID)
-    if not userMatch:
+    user = indexUserWithID(userID)
+    if not user:
         return None
 
-    user = userMatch[0]
     expires_in = datetime.datetime.utcnow() + datetime.timedelta(minutes=expires_minutes)
     payload = {
         'user_id': user.id,
