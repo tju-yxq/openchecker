@@ -1,6 +1,7 @@
 import logging
 import logging.config
 import json
+import sys
 import time
 import functools
 import os
@@ -26,11 +27,32 @@ class StructuredFormatter(logging.Formatter):
         
         # If there's exception info, add it to structured data
         if record.exc_info:
-            record.structured_data['exception'] = {
-                'type': record.exc_info[0].__name__,
-                'message': str(record.exc_info[1]),
-                'traceback': traceback.format_exception(*record.exc_info)
-            }
+            exc_info = record.exc_info
+            if isinstance(exc_info, BaseException):
+                exc_info = (type(exc_info), exc_info, exc_info.__traceback__)
+            elif not isinstance(exc_info, tuple) or len(exc_info) != 3:
+                # A record can carry `exc_info=True` (it is what logging itself
+                # accepts, and what hand-built / replayed records contain). It
+                # used to reach `record.exc_info[0]` below and turn the logging
+                # call into a TypeError, i.e. logging an error could crash the
+                # error path. Resolve it against the live exception instead.
+                exc_info = sys.exc_info()
+            if exc_info and exc_info[0] is not None:
+                record.structured_data['exception'] = {
+                    'type': exc_info[0].__name__,
+                    'message': str(exc_info[1]),
+                    'traceback': traceback.format_exception(*exc_info)
+                }
+            else:
+                # `exc_info=True` is resolved by Logger._log() against the
+                # exception being handled at *logging* time. A record built by
+                # hand, or replayed from a queue, keeps the bare flag, so once
+                # it is formatted later there is no traceback left to attach.
+                # Report that instead of dropping the field without a trace.
+                record.structured_data['exception'] = {
+                    'type': 'unavailable',
+                    'message': 'exc_info was set but no traceback is attached to the record'
+                }
         
         # Add the actual message content
         record.structured_data['message'] = record.getMessage()
