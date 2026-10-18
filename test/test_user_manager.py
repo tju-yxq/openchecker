@@ -1,7 +1,7 @@
 import unittest
 import uuid
 from secrets import compare_digest
-from user_manager import User, createUser, indexUserWithID, indexUserWithName, authenticate, identity
+from openchecker.user_manager import User, createUser, indexUserWithID, indexUserWithName, authenticate, identity
 
 class TestUserFunctions(unittest.TestCase):
 
