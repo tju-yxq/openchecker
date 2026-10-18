@@ -41,6 +41,22 @@ class StructuredFormatter(logging.Formatter):
         
         return json.dumps(record.structured_data, ensure_ascii=False, default=str)
 
+class SimpleFormatter(logging.Formatter):
+    """Human-readable log formatter used when `log_format="simple"`.
+
+    setup_logging() documents two formats, "structured" and "simple", but only
+    the structured branch had a formatter class of its own; the simple branch
+    built plain ``logging.Formatter`` instances from a format string, so the
+    two modes were not symmetric and callers had no formatter object to reuse
+    or to configure a handler with directly.
+    """
+
+    DEFAULT_FORMAT = '%(asctime)s [%(levelname)s] %(name)s:%(lineno)d: %(message)s'
+    DEFAULT_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
+
+    def __init__(self, fmt: Optional[str] = None, datefmt: Optional[str] = None):
+        super().__init__(fmt or self.DEFAULT_FORMAT, datefmt or self.DEFAULT_DATE_FORMAT)
+
 def get_logger(name: str = None) -> logging.Logger:
     """Get configured logger instance"""
     if name is None:
@@ -111,10 +127,11 @@ def setup_logging(
         }
     else:
         formatters['simple'] = {
-            'format': '%(asctime)s [%(levelname)s] %(name)s:%(lineno)d: %(message)s'
+            '()': SimpleFormatter
         }
         formatters['detailed'] = {
-            'format': '%(asctime)s [%(levelname)s] %(name)s:%(lineno)d: %(funcName)s: %(message)s'
+            '()': SimpleFormatter,
+            'fmt': '%(asctime)s [%(levelname)s] %(name)s:%(lineno)d: %(funcName)s: %(message)s'
         }
     
     # Handler configuration
