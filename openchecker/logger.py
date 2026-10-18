@@ -252,7 +252,36 @@ def setup_logging(
         }
     }
     
-    logging.config.dictConfig(config)
+    try:
+        logging.config.dictConfig(config)
+    except Exception as exc:
+        # dictConfig() raises when a handler cannot be built - an unwritable
+        # log directory, a read-only or full filesystem, a locked file on
+        # Windows. Losing the log file must not take the service down at
+        # startup, so fall back to console output and say why.
+        fallback = {
+            'version': 1,
+            'disable_existing_loggers': False,
+            'formatters': {'simple': {'()': SimpleFormatter}},
+            'handlers': {
+                'console': {
+                    'class': 'logging.StreamHandler',
+                    'level': log_level,
+                    'formatter': 'simple',
+                    'stream': 'ext://sys.stdout'
+                }
+            },
+            'loggers': {
+                '': {'handlers': ['console'], 'level': log_level, 'propagate': False},
+                'openchecker': {'handlers': ['console'], 'level': log_level, 'propagate': False}
+            }
+        }
+        logging.config.dictConfig(fallback)
+        logging.getLogger('openchecker').warning(
+            "Logging setup failed (%s: %s); continuing with console logging only",
+            type(exc).__name__, exc)
+        return
+
     
     # Log configuration information
     logger = get_logger('openchecker')
