@@ -3,11 +3,14 @@ from secrets import compare_digest
 from helper import read_config
 
 class User:
-    def __init__(self, id, username, password, access=['request']):
+    def __init__(self, id, username, password, access=None):
         self.id = id
         self.name = username
         self.password = password
-        self.access = access
+        # A mutable default is shared by every user created without one, so a
+        # single `user.access.append(...)` would grant the permission to all of
+        # them.
+        self.access = ['request'] if access is None else list(access)
 
     def __str__(self):
         return f"User(id='{str(self.id)}')"
