@@ -21,7 +21,12 @@ usernameTable = {u.name: u for u in userList}
 useridTable = {u.id: u for u in userList}
 
 def createUser(username, password, access):
-    userList.append(User(str(uuid.uuid5(uuid.NAMESPACE_DNS, username)), username, password, access))
+    user = User(str(uuid.uuid5(uuid.NAMESPACE_DNS, username)), username, password, access)
+    # Index the new user as well: without this the account exists in userList but
+    # neither authenticate() nor identity() can find it.
+    userList.append(user)
+    usernameTable[user.name] = user
+    useridTable[user.id] = user
 
 def indexUserWithID(userID):
     return useridTable.get(userID, None)
@@ -64,7 +69,10 @@ def delete_user(userID):
     user = indexUserWithID(userID)
     if user:
         userList.remove(user)
-        del usernameTable[user.name]
+        usernameTable.pop(user.name, None)
+        # Drop the id index too, otherwise a deleted account still resolves through
+        # identity() and its token keeps working.
+        useridTable.pop(user.id, None)
         del useridTable[userID]
         return True
     return False
