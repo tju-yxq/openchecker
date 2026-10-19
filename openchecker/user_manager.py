@@ -46,9 +46,13 @@ def update_user(userID, new_username=None, new_password=None, new_access=None):
     user = indexUserWithID(userID)
     if user:
         if new_username:
+            # Capture the old name first: `user.name` is already the new one
+            # by the time the old entry is removed, which used to delete the
+            # entry that had just been added.
+            old_username = user.name
             user.name = new_username
             usernameTable[new_username] = user
-            del usernameTable[user.name]
+            del usernameTable[old_username]
         if new_password:
             user.password = new_password
         if new_access:
