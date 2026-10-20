@@ -5,6 +5,9 @@ from typing import List, Dict, Tuple, Any
 from pathlib import Path
 from common import get_platform_type, list_workflow_files
 from platform_adapter import platform_manager
+from logger import get_logger
+
+logger = get_logger('openchecker.checkers.pinned_dependencies_checker')
 
 
 COMMAND = 'pinned-dependencies-checker'
